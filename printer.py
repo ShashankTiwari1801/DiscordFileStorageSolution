@@ -19,16 +19,22 @@ COLOR_MAP = {
 }
 
 
+def get_color_map():
+    return COLOR_MAP
+    pass
+
+
 def get_indent(depth):
-    res = "     "
+    res = "    "
     res *= depth
     return res
 
-def get_lines_after(lines):
-    res = "\n"
-    res *= lines
-    return res
 
-def _print(text, color, end = '\n', indent = 0):
+def _print(text = "", color = "WHITE", end = '\n', indent = 0):
     txt = f"{get_indent(indent)}{COLOR_MAP[color]}{text}{COLOR_MAP['END']}"
     print(txt, end=end)
+
+def show_colors():
+    for color in COLOR_MAP.keys():
+        _print(f"{color} = HELLO", color,indent=1)
+    pass

@@ -1,65 +1,122 @@
-import time
+import os
 
-'''
+import printer
 
-[Uploaded 25/100 files] - Uploading "document_26.txt" (26% complete)
+terminal_size = os.get_terminal_size()
+terminal_width = terminal_size.columns
+
+bars = [' ', '▁', '▂', '▃', '▃', '▄', '▄', '▅', '▆', '▇', '█']
+
+bars = [' ', '▁', '▂', '▃', '▄', '█']
 
 
-'''
-icon_map = {
-    "full" : "█",
-    "half" : "▓",
-    "none" : "▒"
-}
-'''
+def decorate(text, index):
+    colors = [
+        201, 200, 199,   # Violet
+        54, 55,           # Indigo
+        18, 19, 20,       # Blue
+        46, 47, 48, 49,   # Green
+        226, 227, 228,    # Yellow
+        220, 214,         # Orange
+        196, 160, 124     # Red
+    ]
 
-    "full" : "⠿",
-    "half" : "⠇",
-    "none" : "⠀"
+    #print(f"\033[38;5;{colors[index]}m{text}\033[0m")
+    return f"\033[38;5;{colors[index]}m{text}\033[0m"
 
-┃▒▒▒▓▓▓██████           ┃
-'''
-def get_indent(depth):
-    res = f"[{icon_map["full"]}{icon_map["full"]}{icon_map["half"]}{icon_map["none"]}{icon_map["none"]}]"
-    res *= depth
+
+def get_bars(percent):
+    og = percent
+    empty = 100-percent
+    empty = " "*int(empty/5)
+    res = ""
+    
+    while percent >= 5:
+        percent -= 5
+        res += bars[-1]
+
+
+    # while percent >= 10:
+    #     percent -= 10
+    #     res += bars[-1]
+    
+    if percent > 0:
+        res += bars[percent]
+
+    # 97% => 0 9 7
+
+    hun = og // 100;
+    ten = (og % 100) // 10;
+    one = og % 10;
+
+    res += empty
+
+    temp = list(res)
+    temp[8] = str(hun)
+    temp[9] = str(ten)
+    temp[10] = str(one)
+    temp[11] = "%"
+
+    for i in range(0, len(temp)):
+        temp[i] = decorate(temp[i], i)
+    res = "".join(temp)
+
+    res = f"{res}"
+    
     return res
-
-def get_progress_bar(progress):
-    '''
-    20 bars = 100%
-    1 bar = 5%
-    1/2 bar = [2.5% - 5%)
-    '''
-    full_bars = int(progress//5)
-    full_bars = icon_map["full"] * full_bars
-
-    partial_bars = ""
-    partial_val = progress - (progress//5)
-
-    if partial_val > 3:
-        partial_bars = icon_map["half"]
-
-    rem = 20 - len(partial_bars) - len(full_bars)
-
-    rem = icon_map["none"]*rem
-
-    res = f"┃{full_bars}{partial_bars}{rem}┃"
-
-    return res
+    
+'''
+┃███████▃  ┃ = 74%
 
 
-def print_loading_msg(current_progress, max_value,transfer_type, indent = 0):
 
-    progress = current_progress/max_value
-    progress *= 100
+┃█38%███▃            ┃ = 38%
+01234567890123456789012345
 
-    progress = int(progress*100) / 100
+|█38%███▃            |
+ 01234567890123456789
+012345678901
+- - - - - - - -
+▁ ▂ ▃ ▄ ▅ ▆ ▇ █
 
-    indent = get_indent(indent)
+0  - ' '
+1  - '▁'
+2  - '▂'
+3  - '▃'
+4  - '▃'
+5  - '▄'
+6  - '▄'
+7  - '▅'
+8  - '▆'
+9  - '▇'
+10 - '█'
 
-    indent = get_progress_bar(progress)
 
-    text = f"\r{indent}[{transfer_type}ed {current_progress}/{max_value} files] - {transfer_type}ing ({progress}% completed)"
+┃▒▒▒▓▓▓▓▓███████        ┃
 
-    return text
-    #print(f"\r{text}", end='')
+
+'''
+    
+def get_loading_bar(current, total, TYPE):
+    global terminal_width
+
+    percent = (current / total) * 100
+
+    PART1 = f"\r┃{get_bars(int(percent))}┃"
+    PART2 = f"{current}/{total} Files {TYPE}loaded"
+
+    PART1_LEN = 22
+
+    if PART1_LEN + len(PART2) < terminal_width:
+        PART1 += PART2
+    
+    print(PART1, end='')
+
+
+# import time
+
+# N = 100
+# for i in range(0,N):
+#     get_bars(i)
+#     get_loading_bar(i+1, N, "Up", "temp_part_aaaa")
+#     time.sleep(0.1)

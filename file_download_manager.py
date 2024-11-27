@@ -1,178 +1,102 @@
 import os
-import printer
-import view_upload_file_list
-import json
-import discord
 import shutil
-import file_compiler
-import loading_bar
 
-discord_token = ""
-channel_id = ""
+import printer
+import uploaded_file_viewer
+import chunk_manager
+import discord_manager
+import metadata_manager
 
-chunk_id = ""
 
-metadata_map = {}
+terminal_size = os.get_terminal_size()
+terminal_width = terminal_size.columns
+base_indent = 0
 
-intents = discord.Intents.default()
-client = discord.Client(intents=intents)
+base_indent = 0
 
-base_indent = 2
+def welcome_msg():
 
-####################################### DISCORD API ############################################
+    global terminal_width
 
-async def download_attachment(message_id, save_dir_path, file_name):
+    text_color = "BRIGHT_BLUE"
+    text = " FILE DOWNLOAD WIZARD "
+    dash = "-" * terminal_width
+    space_before = (terminal_width - len(text))//2
+    space_after = (terminal_width - space_before - len(text))
+    text = "●" * space_before + text + "●" * space_after
 
-    global channel_id
+    printer._print()
+    printer._print(text, text_color, indent=base_indent)
+    printer._print()
+    printer._print()
 
-    channel = client.get_channel(channel_id)
 
-    message = await channel.fetch_message(message_id)
+def err_exit():
+    printer._print(" ERR: INVALID INPUT ", color="RED", indent=base_indent)
+    printer._print()
+    exit()
 
-    attachment = message.attachments[0]
 
-    save_file_path = f"{save_dir_path}/{file_name}"
+def get_input():
+    get_input_color = "BRIGHT_BLUE"
+    MSG = "ENTER THE ID OF FILE YOU WANT TO DOWNLOAD: "
+    printer._print(MSG, color=get_input_color, indent=base_indent+2,end='')
+    selected_id = input("")
+    try:
+        selected_id = int(selected_id)
+    except:
+        err_exit()
+    return selected_id
 
-    await attachment.save(save_file_path)
-    #printer._print(f"Saved file @ file_save_path : {save_file_path}", color="GREEN", indent=5)
 
-    pass
-
-@client.event
-async def on_ready():
-
-    global chunk_id
-    global metadata_map
-
-    print()
-    printer._print(f'Logged in as {client.user}', color="WHITE", indent=base_indent+2)
-    print()
+def get_selected_file(file_list, selected_id):
+    if selected_id >= len(file_list):
+        err_exit()
     
-    total_chunks = int(metadata_map["total_chunks"])
-
-    chunk_metadata = metadata_map["chunk_metadata"]
-
-    save_dir_path = f"chunked_files/{chunk_id}"
-
-    printer._print(save_dir_path, color="MAGENTA", indent=base_indent+2)
-
-    for i in range(0,total_chunks):
-        og_name = chunk_metadata[str(i)]["og_name"]
-        message_id = chunk_metadata[str(i)]["message_id"]
-        printer._print(loading_bar.print_loading_msg(i+1, total_chunks, "Download", indent=5), color="MAGENTA", end='', indent=2)
-        await download_attachment(message_id, save_dir_path,og_name)
-        pass
-    print("\n")
-    #printer._print(metadata_map, color="YELLOW", indent=3)
-
-    await client.close()
-
-####################################### /DISCORD API ###########################################
+    return file_list[selected_id]
 
 
-def welcome_message():
-
-    print("\n\n")
-
-    msg = "FILE DOWNLOADER WIZARD"
-    temp = "+" + ("="*len(msg)*3) + "+"
-    printer._print(temp, "YELLOW", indent=base_indent)
-
-
-    temp = "|" + (" "*len(msg)) + msg + (" "*len(msg)) + "|"
-    printer._print(temp, "YELLOW", indent=base_indent)
-
-
-    temp = "+" + ("="*len(msg)*3) + "+"
-    printer._print(temp, "YELLOW", indent=base_indent)
-    pass
-
-def take_input():
-    printer._print("ENTER THE ID OF THE FILE YOU WANT TO DOWNLOAD", color="YELLOW", indent=base_indent+1, end=': ')
-    chunk_id = input()
-    print("\n")
-    return chunk_id
-
-def print_confirmation_msg(chunk_id, metadata_location):
-    printer._print(f"found {chunk_id}. Found metadata @{metadata_location}, Downloading File...", color="BLUE", indent=base_indent+1)
-    print()
-    pass
-
-def fetch_matadata(file_location):
-
-    data = {}
-
-    with open(file_location, "r") as file:
-        data = json.load(file)
-    
-    return data
-
-def generate_chunk_id(file_path):
-    global uploading_file_name
-
-    file_name = os.path.basename(file_path)
-    uploading_file_name = file_name
-    file_name = file_name.split(".")[0]
-    return file_name
-
-def setup_download_location(chunk_id):
-    os.makedirs(f"chunked_files/{chunk_id}", exist_ok=True)
-    pass
-
-def download_chunks():
-    pass
-
-def get_api_credentials():
-    data = {}
-    with open("security/API_DATA.json") as file:
-        data = json.load(file)
-    return data
-
-def delete_chunks(chunk_id):
-    location = f"chunked_files/{chunk_id}"
+def delete_chunk_storage_location(file_id):
+    location = f"chunked_files/{file_id}"
+    printer._print("DELETING THE CHUNKED FILES", "RED", indent=base_indent)
     #print(os.path.abspath(location))
-    #print(location)
+    print(location)
     shutil.rmtree(location)
+    pass
+
 
 def init():
+    os.system("clear")
+    welcome_msg()
 
-    global discord_token
-    global channel_id
-    global metadata_map
-    global chunk_id
+    discord_manager.init("DOWNLOAD")
 
-    api_cred = get_api_credentials()
+    file_list = uploaded_file_viewer.init()
+    selected_id = get_input()
 
-    discord_token = api_cred["APP_TOKEN"]
-    channel_id = api_cred["CHANNEL_IDS"]["UPLOAD"]
+    metadata_path = get_selected_file(file_list, selected_id)
 
-    welcome_message()
-    uploaded_file_dict = view_upload_file_list.init()
+    chunk_manager.init()
+
+    file_id = metadata_manager.get_file_id(metadata_path)
     
-    download_id = int(take_input())
+    chunk_manager.create_chunk_dir(file_id)
 
-    if download_id not in uploaded_file_dict.keys():
-        printer._print(f"Entered ID \"[{download_id}]\" doesn't exist", color="RED", indent=base_indent+1)
-        print("\n")
-        exit()
-    
-    metadata_file_path = uploaded_file_dict[download_id] # File Location of metadata.json of the file
+    metadata = metadata_manager.load_metadata(file_id)
 
-    print_confirmation_msg(download_id, metadata_file_path)
+    UPLOADED_CHUNK_COUNT = len(chunk_manager.get_chunk_list(file_id))
+    UPLOADED_CHUNK_COUNT = max(UPLOADED_CHUNK_COUNT-1, 0)
 
-    chunk_id = generate_chunk_id(metadata_file_path)
+    discord_manager.download(file_id, metadata, UPLOADED_CHUNK_COUNT)
 
-    setup_download_location(chunk_id)
+    UPLOADED_CHUNK_COUNT = len(chunk_manager.get_chunk_list(file_id))
 
-    metadata_map = fetch_matadata(metadata_file_path)
+    og_file_name = metadata["original_file_name"]
+    total_chunks = metadata["total_chunks"]
 
-    client.run(discord_token)
-
-    save_dir_path = f"chunked_files/{chunk_id}"
-
-    og_file_name = metadata_map["original_file_name"]
-
-    file_compiler.init(save_dir_path, og_file_name, chunk_id)
-
-    delete_chunks(chunk_id)
-    print()
+    if UPLOADED_CHUNK_COUNT == total_chunks:
+        printer._print()
+        printer._print("DOWNLOADED ALL CHUNKS ...", "GREEN", indent=base_indent+1)
+        chunk_manager.compile_chunks(file_id, og_file_name)
+        delete_chunk_storage_location(file_id)
+        pass

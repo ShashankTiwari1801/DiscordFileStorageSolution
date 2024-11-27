@@ -1,62 +1,88 @@
-'''
-////// TODO:
-make this work with both terminal and flask
-'''
-
-##################################################################################################################################
-#                                                         WRITE CODE BELOW                                                       #
-##################################################################################################################################
-
-'''
-import file_download_manager
-
-import view_uploaded_file_list
-'''
+import printer
+import os
 
 import file_upload_manager
-import view_upload_file_list
 import file_download_manager
-import printer
+import uploaded_file_viewer
+import github_manager
 
 
-choice_head = "Enter you choice(1, 2 or 3)"
+github_manager.init("load")
+
+os.system("clear")
+
+terminal_size = os.get_terminal_size()
+terminal_width = terminal_size.columns
+base_indent = 0
+
+def welcome_msg():
+
+    global terminal_width
+
+    text_color = "BRIGHT_GREEN"
+    text = " FILE STORAGE SOLUTION "
+    dash = "-" * terminal_width
+    space_before = (terminal_width - len(text))//2
+    space_after = (terminal_width - space_before - len(text))
+    text = " " * space_before + text
+
+    printer._print()
+    printer._print(dash, text_color, indent=base_indent)
+    printer._print(text, text_color, indent=base_indent)
+    printer._print(dash, text_color, indent=base_indent)
+
+welcome_msg()
+
+printer._print()
+printer._print()
+
+choice_head = "Select you choice(1, 2 or 3)"
 choice_text = [
-"[1] UPLOAD A FILE TO DISCORD",
-"[2] DOWNLOAD FILE FROM DISCORD",
-"[3] GET LIST OF UPLOADED FILES AND THEIR CHUNK ID",
-"[4] EXIT"
+    "[1] UPLOAD A FILE TO SSTORAGE",
+    "[2] DOWNLOAD FILE FROM SSTORAGE",
+    "[3] GET LIST OF UPLOADED FILES AND THEIR CHUNK ID",
+    "[4] EXIT"
 ]
 
-while True:
+head_color = "CYAN"
+printer._print(choice_head, head_color, indent=base_indent+1)
 
-    print("\n\n")
-    printer._print(choice_head,"CYAN", end='\n\n',indent=1)
-    for x in choice_text:
-        printer._print(x,"BLUE", indent=2)
-    print("\n\n")
+printer._print()
 
-    choice = input("Enter your choice: ")
+choice_color = "BRIGHT_WHITE"
+for choise in choice_text:
+    printer._print(choise, choice_color, indent=base_indent+2)
 
-    try:
-        choice = (int)(choice)
-    except:
-        printer._print("\n\nInvalid Input...", "RED", end="\n\n")
-        break
+printer._print()
 
-    if(choice < 1 or choice > 3):
-        printer._print("\n\nClosing...", "RED", end="\n\n")
-        break
+enter_choice_text = "Enter your choice (1-4): "
+enter_choice_color = "BRIGHT_YELLOW"
+printer._print(enter_choice_text, enter_choice_color, indent=base_indent+1, end='')
 
-    if(choice == 1):
-        file_upload_manager.init()
+choice = 0
+choice = input("")
 
-    if choice == 2:
-        file_download_manager.init()
+printer._print()
 
-    if(choice == 3):
-        view_upload_file_list.init()
-    
-    break
+try:
+    choice = int(choice)
+except:
+    printer._print(" ERR: INVALID INPUT ", color="RED", indent=base_indent)
+    printer._print()
+    exit()
 
+printer._print()
+printer._print()
+printer._print()
 
-#print(choice_text)
+if choice == 1:
+    file_upload_manager.init()
+
+elif choice == 2:
+    file_download_manager.init()
+
+elif choice == 3:
+    uploaded_file_viewer.init()
+
+elif choice == 4:
+    exit()
